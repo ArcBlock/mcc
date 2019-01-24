@@ -28,7 +28,8 @@ defmodule Mcc.MixProject do
   defp deps do
     [
       {:excoveralls, "~> 0.10", only: [:test]},
-      {:dialyxir, "~> 0.5", only: [:dev], runtime: false}
+      {:dialyxir, "~> 0.5", only: [:dev], runtime: false},
+      {:porcelain, "~> 2.0", only: [:test]}
     ]
   end
 

@@ -2,6 +2,10 @@ defmodule MccTest do
   use ExUnit.Case
   alias MccTest.Support.Table.Account, as: TableAccount
 
+  setup_all do
+    Mcc.start()
+  end
+
   test "test put and get" do
     TableAccount.put_with_ttl("id1", %{id: "id1", name: "name1"})
 
