@@ -1,0 +1,19 @@
+language: elixir
+dist: xenial
+elixir:
+  - 1.7.4
+otp_release:
+  - 21.1.1
+branches:
+  only:
+    - master
+install:
+  - epmd -daemon
+  - mix local.hex --force
+  - mix local.rebar --force
+env:
+  - MIX_ENV=test
+script:
+  - mix deps.get
+  - mix credo
+  - mix test
