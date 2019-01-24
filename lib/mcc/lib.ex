@@ -4,11 +4,11 @@ defmodule Mcc.Lib do
 
   Includes:
 
-  1, start mnesia and mnesia table
-  2, make node join into the mnesia cluster
-  3, make node leave from the mnesia cluster
-  4, remove one node from mnesia cluster
-  5, get status of mnesia cluster
+    - 1, start mnesia and mnesia table
+    - 2, make node join into the mnesia cluster
+    - 3, make node leave from the mnesia cluster
+    - 4, remove one node from mnesia cluster
+    - 5, get status of mnesia cluster
   """
 
   @doc """
