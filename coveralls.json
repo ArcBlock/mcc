@@ -1,0 +1,8 @@
+{
+  "skip_files": [
+    "test/support",
+    "lib/mcc/model/builder.ex",
+    "lib/mcc/model/repo.ex",
+    "lib/mcc/model/table.ex"
+  ]
+}

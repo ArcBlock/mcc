@@ -19,11 +19,11 @@ defmodule Mcc.Lib do
   """
   @spec start :: :ok | {:error, term()}
   def start do
-    ensure_ok(ensure_data_dir())
-    ensure_ok(init_mnesia_schema())
-    :mnesia.start()
-    init_tables()
-    wait_for(:tables)
+    :ok = ensure_ok(ensure_data_dir())
+    :ok = ensure_ok(init_mnesia_schema())
+    :ok = :mnesia.start()
+    :ok = init_tables()
+    :ok = wait_for(:tables)
   end
 
   @doc """
