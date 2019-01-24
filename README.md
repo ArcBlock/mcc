@@ -1,6 +1,6 @@
 # Mcc (Mnesia Cluster Cache)
 
-[![Build Status](https://img.shields.io/travis/ArcBlock/mcc.svg?style=flat-square)](https://travis-ci.org/ArcBlock/mcc)
+[![Build Status](https://travis-ci.com/ArcBlock/mcc.svg?token=y7spFnxztFEypxKZdeqR&branch=master)](https://travis-ci.com/ArcBlock/mcc)
 
 `mcc` is Mnesia Cluster Cache, which support expiration and cluster.
 
