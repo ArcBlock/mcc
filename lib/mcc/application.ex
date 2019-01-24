@@ -27,7 +27,7 @@ defmodule Mcc.Application do
 
       node_list ->
         [target_node | _] = Enum.sort(node_list)
-        :ok = ensure_target_running(target_node)
+        true = ensure_target_running?(target_node)
 
         case Mcc.join(target_node) do
           :ok -> :ok
@@ -45,12 +45,12 @@ defmodule Mcc.Application do
   end
 
   @doc false
-  defp ensure_target_running(target_node) do
+  defp ensure_target_running?(target_node) do
     if Mcc.is_running?(target_node) do
       true
     else
       Process.sleep(300)
-      ensure_target_running(target_node)
+      ensure_target_running?(target_node)
     end
   end
 

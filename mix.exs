@@ -9,6 +9,11 @@ defmodule Mcc.MixProject do
       start_permanent: Mix.env() == :prod,
       elixirc_paths: elixirc_paths(Mix.env()),
       test_coverage: [tool: ExCoveralls],
+      dialyzer: [
+        paths: ["_build/dev/lib/mcc/ebin"],
+        flags: [:unmatched_returns, :error_handling, :race_conditions, :no_opaque],
+        plt_add_apps: [:mnesia]
+      ],
       deps: deps()
     ]
   end
@@ -22,7 +27,8 @@ defmodule Mcc.MixProject do
 
   defp deps do
     [
-      {:excoveralls, "~> 0.10", only: [:test]}
+      {:excoveralls, "~> 0.10", only: [:test]},
+      {:dialyxir, "~> 0.5", only: [:dev], runtime: false}
     ]
   end
 

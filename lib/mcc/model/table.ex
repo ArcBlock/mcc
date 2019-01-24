@@ -5,6 +5,8 @@ defmodule Mcc.Model.Table do
 
   defmacro __using__(opts) do
     quote do
+      require Logger
+
       import Kernel, except: [defstruct: 1]
       import Mcc.Model.Builder
 
@@ -14,34 +16,41 @@ defmodule Mcc.Model.Table do
       @record_name __MODULE__
       @before_compile unquote(__MODULE__)
 
-      def get_expiration_opts do
-        @expiration_opts
-      end
+      @doc """
+      Get expiration options for current table.
+      """
+      @spec get_expiration_opts :: Keyword.t()
+      def get_expiration_opts, do: @expiration_opts
 
+      @doc """
+      Return all keys from current table.
+      """
       def keys do
-        @table_name
-        |> :mnesia.dirty_all_keys()
+        :mnesia.dirty_all_keys(@table_name)
+      catch
+        :exit, reason ->
+          Logger.warn("Get keys from #{__MODULE__} error, #{inspect(reason)}")
+          []
       end
 
-      def last do
-        @table_name
-        |> :mnesia.dirty_last()
-      end
-
-      def first do
-        @table_name
-        |> :mnesia.dirty_first()
-      end
-
+      @doc """
+      Return all records from current table by given `key`.
+      """
+      @spec get_all(term()) :: [map()]
       def get_all(key) do
         @table_name
         |> :mnesia.dirty_read(key)
         |> Enum.map(&record_to_struct/1)
+      catch
+        :exit, reason ->
+          Logger.warn("Get all records from #{__MODULE__} by key error, #{inspect(reason)}")
+          []
       end
 
       @doc """
       Return first record from current table by given `key`.
       """
+      @spec get(term()) :: nil | map()
       def get(key) do
         key
         |> get_all()
@@ -66,63 +75,106 @@ defmodule Mcc.Model.Table do
       @doc """
       Put into current table.
       """
+      @spec put(map()) :: :ok
       def put(%{__struct__: __MODULE__} = struct) do
         :mnesia.dirty_write(@table_name, struct_to_record(struct))
+      catch
+        :exit, reason ->
+          Logger.warn("Write #{__MODULE__} error, #{inspect(reason)}")
+          :ok
       end
 
       @doc """
       Put with cache_time and ttl.
       """
+      @spec put(term(), map(), atom(), non_neg_integer(), non_neg_integer()) :: :ok
       def put(key, %{__struct__: __MODULE__} = struct, exp_tab, cache_time, ttl) do
         set_ttl(struct, exp_tab, key, cache_time, ttl)
         put(%{struct | __cache_time__: cache_time, __expire_time__: cache_time + ttl})
       end
 
+      @doc """
+      Delete the record from current table by given `key`.
+      """
+      @spec delete(term()) :: :ok
       def delete(key) do
-        @table_name
-        |> :mnesia.dirty_delete(key)
+        :mnesia.dirty_delete(@table_name, key)
+      catch
+        :exit, reason ->
+          Logger.warn("Delete from #{__MODULE__} error, #{inspect(reason)}")
+          :ok
       end
 
+      @doc """
+      Delete the record from current table by given `object`.
+      """
+      @spec delete_object(map()) :: :ok
       def delete_object(object) do
-        object
-        |> :mnesia.dirty_delete_object()
+        :mnesia.dirty_delete_object(object)
+      catch
+        :exit, reason ->
+          Logger.warn("Delete object from #{__MODULE__} error, #{inspect(reason)}")
+          :ok
       end
 
-      @spec delete_all_objects() :: :ok
-      def delete_all_objects do
-        keys()
-        |> Enum.each(fn key -> delete(key) end)
+      @doc """
+      First for current table.
+      """
+      @spec first :: term() | :"$end_of_table"
+      def first do
+        :mnesia.dirty_first(@table_name)
+      catch
+        :exit, reason ->
+          Logger.warn("First from #{__MODULE__} error, #{inspect(reason)}")
+          :"$end_of_table"
       end
 
-      @spec all_objects() :: list()
-      def all_objects do
-        keys()
-        |> Enum.map(fn key -> get(key) end)
+      @doc """
+      Last for current table.
+      """
+      @spec last :: term() | :"$end_of_table"
+      def last do
+        :mnesia.dirty_last(@table_name)
+      catch
+        :exit, reason ->
+          Logger.warn("Last from #{__MODULE__} error, #{inspect(reason)}")
+          :"$end_of_table"
       end
 
       @doc """
       Next key for current table.
       """
-      def next(key), do: :mnesia.dirty_next(@table_name, key)
+      @spec next(term()) :: term() | :"$end_of_table"
+      def next(key) do
+        :mnesia.dirty_next(@table_name, key)
+      catch
+        :exit, reason ->
+          Logger.warn("Next from #{__MODULE__} error, #{inspect(reason)}")
+          :"$end_of_table"
+      end
 
       @doc """
       Table info.
       """
-      def table_info(infokey), do: :mnesia.table_info(@table_name, infokey)
+      @spec table_info(atom()) :: term()
+      def table_info(infokey) do
+        :mnesia.table_info(@table_name, infokey)
+      catch
+        :exit, reason ->
+          Logger.warn("Get table info for #{__MODULE__} error, #{inspect(reason)}")
+          nil
+      end
 
       @doc """
       Set ttl.
       """
+      @spec set_ttl(map(), atom(), term(), non_neg_integer(), non_neg_integer()) :: :ok
       def set_ttl(%{__expire_time__: expire_time}, exp_tab, key, cache_time, ttl) do
         exp_tab.delete({expire_time, key})
         exp_tab.put({cache_time + ttl, key}, 0)
       end
 
-      defoverridable keys: 0,
-                     get_all: 1,
-                     get: 1,
-                     put: 1,
-                     delete: 1
+      defoverridable []
     end
   end
 

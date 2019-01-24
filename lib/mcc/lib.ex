@@ -31,13 +31,13 @@ defmodule Mcc.Lib do
   """
   @spec join_cluster(node()) :: :ok | {:error, term()}
   def join_cluster(node_name) do
-    ensure_ok(ensure_stopped())
-    ensure_ok(delete_schema())
-    ensure_ok(ensure_started())
-    ensure_ok(connect(node_name))
-    ensure_ok(copy_schema(node()))
-    copy_tables()
-    ensure_ok(wait_for(:tables))
+    :ok = ensure_ok(ensure_stopped())
+    :ok = ensure_ok(delete_schema())
+    :ok = ensure_ok(ensure_started())
+    :ok = ensure_ok(connect(node_name))
+    :ok = ensure_ok(copy_schema(node()))
+    :ok = copy_tables()
+    :ok = ensure_ok(wait_for(:tables))
   end
 
   @doc """
@@ -70,13 +70,13 @@ defmodule Mcc.Lib do
   def remove_from_cluster(node_name) when node_name != node() do
     case {node_in_cluster?(node_name), running_db_node?(node_name)} do
       {true, true} ->
-        ensure_ok(:rpc.call(node_name, __MODULE__, :ensure_stopped, []))
-        ensure_ok(del_schema_copy(node_name))
-        ensure_ok(:rpc.call(node_name, __MODULE__, :delete_schema, []))
+        :ok = ensure_ok(:rpc.call(node_name, __MODULE__, :ensure_stopped, []))
+        :ok = ensure_ok(del_schema_copy(node_name))
+        :ok = ensure_ok(:rpc.call(node_name, __MODULE__, :delete_schema, []))
 
       {true, false} ->
-        ensure_ok(del_schema_copy(node_name))
-        ensure_ok(:rpc.call(node_name, __MODULE__, :delete_schema, []))
+        :ok = ensure_ok(del_schema_copy(node_name))
+        :ok = ensure_ok(:rpc.call(node_name, __MODULE__, :delete_schema, []))
 
       {false, _} ->
         {:error, :node_not_in_cluster}
@@ -115,7 +115,7 @@ defmodule Mcc.Lib do
   """
   @spec ensure_stopped :: :ok | {:error, any()}
   def ensure_stopped do
-    :mnesia.stop()
+    _ = :mnesia.stop()
     wait_for(:stop)
   end
 
@@ -148,7 +148,7 @@ defmodule Mcc.Lib do
   @doc """
   Create mnesia table.
   """
-  @spec create_table(atom(), atom()) :: :ok | {:error, any()}
+  @spec create_table(atom(), list()) :: :ok | {:error, any()}
   def create_table(name, tabdef) do
     ensure_tab(:mnesia.create_table(name, tabdef))
   end
@@ -204,7 +204,7 @@ defmodule Mcc.Lib do
 
   @doc false
   defp ensure_started do
-    :mnesia.start()
+    _ = :mnesia.start()
     wait_for(:start)
   end
 
@@ -221,9 +221,9 @@ defmodule Mcc.Lib do
   defp leave_cluster(node_name) when node_name != node() do
     case running_db_node?(node_name) do
       true ->
-        ensure_ok(ensure_stopped())
-        ensure_ok(:rpc.call(node_name, __MODULE__, :del_schema_copy, [node()]))
-        ensure_ok(delete_schema())
+        :ok = ensure_ok(ensure_stopped())
+        :ok = ensure_ok(:rpc.call(node_name, __MODULE__, :del_schema_copy, [node()]))
+        :ok = ensure_ok(delete_schema())
 
       false ->
         {:error, {:node_name_not_running, node_name}}

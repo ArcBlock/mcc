@@ -57,7 +57,7 @@ defmodule Mcc.Model do
   @doc """
   Create mnesia table.
   """
-  @spec create_table(atom(), atom()) :: :ok | {:error, any()}
+  @spec create_table(atom(), list()) :: :ok | {:error, any()}
   def create_table(name, tab_def) do
     :ok = ensure_table(:mnesia.create_table(name, tab_def))
   end
