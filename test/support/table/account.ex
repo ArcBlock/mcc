@@ -39,7 +39,9 @@ defmodule MccTest.Support.Table.Account do
       main_table: MccTest.Support.Table.Account,
       size_limit: 100,
       # 300M
-      memory_limit: 300
+      memory_limit: 300,
+      waterline_ratio: 0.7,
+      check_interval: 1_000
     ]
 
   defstruct([:id, :user_profile], true)
