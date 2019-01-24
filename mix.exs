@@ -27,6 +27,8 @@ defmodule Mcc.MixProject do
 
   defp deps do
     [
+      {:credo, "~> 1.0", only: [:dev, :test]},
+      {:ex_doc, "~> 0.19", only: [:dev, :test]},
       {:excoveralls, "~> 0.10", only: [:test]},
       {:dialyxir, "~> 0.5", only: [:dev], runtime: false},
       {:porcelain, "~> 2.0", only: [:test]}

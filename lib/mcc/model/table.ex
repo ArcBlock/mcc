@@ -130,30 +130,6 @@ defmodule Mcc.Model.Table do
       end
 
       @doc """
-      Last for current table.
-      """
-      @spec last :: term() | :"$end_of_table"
-      def last do
-        :mnesia.dirty_last(@table_name)
-      catch
-        :exit, reason ->
-          Logger.warn("Last from #{__MODULE__} error, #{inspect(reason)}")
-          :"$end_of_table"
-      end
-
-      @doc """
-      Next key for current table.
-      """
-      @spec next(term()) :: term() | :"$end_of_table"
-      def next(key) do
-        :mnesia.dirty_next(@table_name, key)
-      catch
-        :exit, reason ->
-          Logger.warn("Next from #{__MODULE__} error, #{inspect(reason)}")
-          :"$end_of_table"
-      end
-
-      @doc """
       Table info.
       """
       @spec table_info(atom()) :: term()

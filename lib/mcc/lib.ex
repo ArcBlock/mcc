@@ -48,16 +48,7 @@ defmodule Mcc.Lib do
           | {:error, :node_not_in_cluster}
           | {:error, {:failed_to_leave, node()}}
   def leave_cluster do
-    case running_nodes() -- [node()] do
-      [] ->
-        {:error, :node_not_in_cluster}
-
-      nodes ->
-        case Enum.any?(nodes, fn node_name -> leave_cluster(node_name) end) do
-          true -> :ok
-          _ -> {:error, {:failed_to_leave, nodes}}
-        end
-    end
+    leave_cluster(running_nodes() -- [node()])
   end
 
   @doc """
@@ -218,7 +209,16 @@ defmodule Mcc.Lib do
   end
 
   @doc false
-  defp leave_cluster(node_name) when node_name != node() do
+  defp leave_cluster([]), do: {:error, :node_not_in_cluster}
+
+  defp leave_cluster(nodes) when is_list(nodes) do
+    case Enum.any?(nodes, fn node_name -> leave_cluster(node_name) end) do
+      true -> :ok
+      _ -> {:error, {:failed_to_leave, nodes}}
+    end
+  end
+
+  defp leave_cluster(node_name) when is_atom(node_name) and node_name != node() do
     case running_db_node?(node_name) do
       true ->
         :ok = ensure_ok(ensure_stopped())

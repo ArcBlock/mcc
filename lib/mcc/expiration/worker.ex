@@ -47,7 +47,7 @@ defmodule Mcc.Expiration.Worker do
     if DateTime.to_unix(DateTime.utc_now()) > expire_time do
       :ok = exp_tab.delete(key)
       :ok = main_tab.delete(main_key)
-      clean_table_via_ttl(exp_tab.next(key), exp_tab, main_tab)
+      clean_table_via_ttl(exp_tab.first(), exp_tab, main_tab)
     else
       :ok
     end
