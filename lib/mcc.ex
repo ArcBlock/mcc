@@ -3,7 +3,7 @@ defmodule Mcc do
   Documentation for Mcc.
   """
 
-  alias Mcc.Lib
+  alias Mcc.{Cache, Lib}
 
   defdelegate start, to: Lib
 
@@ -88,6 +88,8 @@ defmodule Mcc do
   def is_clustered?(node_name) do
     Enum.member?(Lib.running_nodes(), node_name)
   end
+
+  defdelegate check_cache_before(operate_mod, operate_func, operate_args, cache_opts), to: Cache
 
   # __end_of_module__
 end

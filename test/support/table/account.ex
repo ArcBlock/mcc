@@ -55,7 +55,7 @@ defmodule MccTest.Support.Table.Account do
         old_object
 
       _ ->
-        nil
+        :"$not_can_found"
     end
   end
 
