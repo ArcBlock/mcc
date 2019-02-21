@@ -4,7 +4,7 @@ defmodule Mcc.MixProject do
   def project do
     [
       app: :mcc,
-      version: "0.1.1",
+      version: "1.0.0",
       elixir: "~> 1.7",
       start_permanent: Mix.env() == :prod,
       elixirc_paths: elixirc_paths(Mix.env()),
@@ -14,7 +14,9 @@ defmodule Mcc.MixProject do
         flags: [:unmatched_returns, :error_handling, :race_conditions, :no_opaque],
         plt_add_apps: [:mnesia]
       ],
-      deps: deps()
+      deps: deps(),
+      description: description(),
+      package: package()
     ]
   end
 
@@ -37,6 +39,19 @@ defmodule Mcc.MixProject do
 
   defp elixirc_paths(:test), do: ["lib", "test/support"]
   defp elixirc_paths(_), do: ["lib"]
+
+  defp description do
+    "Cache built via mnesia which support expiration and cluster."
+  end
+
+  defp package do
+    [
+      name: "mcc",
+      maintainers: ["redink"],
+      licenses: ["Apache 2.0"],
+      links: %{"GitHub" => "https://github.com/ArcBlock/mcc"}
+    ]
+  end
 
   # __end_of_module__
 end
