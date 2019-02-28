@@ -67,7 +67,7 @@ defmodule Mcc.Expiration.Worker do
 
   @doc false
   defp clean_table_via_memory_limit(exp_tab, main_tab, memory_limit, waterline_ratio) do
-    memory_limit = round(memory_limit * 1024 * 1024 / 8)
+    memory_limit = round(memory_limit * 1024 * 1024 / :erlang.system_info(:wordsize))
     mem_waterline = round(memory_limit * waterline_ratio)
 
     if main_tab.table_info(:memory) >= memory_limit do
