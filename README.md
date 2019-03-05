@@ -1,6 +1,7 @@
 # Mcc (Mnesia Cluster Cache)
 
 [![Build Status](https://travis-ci.com/ArcBlock/mcc.svg?token=y7spFnxztFEypxKZdeqR&branch=master)](https://travis-ci.com/ArcBlock/mcc)
+[![Hex.pm Version](https://img.shields.io/hexpm/v/mcc.svg?style=flat-square)](https://hex.pm/packages/mcc)
 
 `mcc` is Mnesia Cluster Cache, which support expiration and cluster.
 
@@ -107,3 +108,7 @@ MccTest.Support.Cache.start_expiration_process()
 Generally speaking, it will be put into application start.
 
 [One complete example could be found in the test cases]
+
+## Change log
+
+- [v1.0.1] Fixed bug when put with ttl and remove `delete_object/1`. [pull request](https://github.com/ArcBlock/mcc/pull/6)

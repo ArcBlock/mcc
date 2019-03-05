@@ -106,15 +106,18 @@ defmodule Mcc.Model.Table do
       end
 
       @doc """
-      Delete the record from current table by given `object`.
+      Delete the record from current table by given `key`, meanwhile delete the expiration.
       """
-      @spec delete_object(map()) :: :ok
-      def delete_object(object) do
-        :mnesia.dirty_delete_object(object)
-      catch
-        :exit, reason ->
-          Logger.warn("Delete object from #{__MODULE__} error, #{inspect(reason)}")
-          :ok
+      @spec delete(term(), atom()) :: :ok
+      def delete(key, exp_tab) do
+        case get(key) do
+          nil ->
+            delete(key)
+
+          %{__expire_time__: old_expire_time} ->
+            exp_tab.delete({old_expire_time, key})
+            delete(key)
+        end
       end
 
       @doc """
@@ -145,6 +148,15 @@ defmodule Mcc.Model.Table do
       Set ttl.
       """
       @spec set_ttl(map(), atom(), term(), non_neg_integer(), non_neg_integer()) :: :ok
+      def set_ttl(%{__expire_time__: nil}, exp_tab, key, cache_time, ttl) do
+        case get(key) do
+          nil -> nil
+          %{__expire_time__: old_expire_time} -> exp_tab.delete({old_expire_time, key})
+        end
+
+        exp_tab.put({cache_time + ttl, key}, 0)
+      end
+
       def set_ttl(%{__expire_time__: expire_time}, exp_tab, key, cache_time, ttl) do
         exp_tab.delete({expire_time, key})
         exp_tab.put({cache_time + ttl, key}, 0)
