@@ -2,8 +2,9 @@ defmodule Mcc.Application do
   @moduledoc false
 
   use Application
-
+  require Logger
   alias Mcc.Expiration.Supervisor, as: ExpSup
+  alias Mcc.Lib
 
   # alias Mcc.
 
@@ -20,9 +21,11 @@ defmodule Mcc.Application do
   defp join_cluster do
     :kernel
     |> Application.get_env(:sync_nodes_optional, [])
+    |> try_connect_nodes()
     |> intersection(Node.list())
     |> case do
       [] ->
+        Logger.warn("[mcc] #{node()} can't find any other nodes")
         :ok
 
       node_list ->
@@ -30,9 +33,11 @@ defmodule Mcc.Application do
         true = ensure_target_running?(target_node)
 
         case Mcc.join(target_node) do
-          :ok -> :ok
-          {:error, {:already_clustered, _}} -> :ok
+          :ok -> Logger.info("[mcc] #{node()} joined in target node #{target_node}")
+          {:error, {:already_clustered, _}} -> nil
         end
+
+        Logger.info("[mcc] current cluster node list: #{inspect(Lib.status())}")
     end
   end
 
@@ -52,6 +57,15 @@ defmodule Mcc.Application do
       Process.sleep(300)
       ensure_target_running?(target_node)
     end
+  end
+
+  @doc false
+  defp try_connect_nodes(node_list) do
+    node_list
+    |> Enum.map(fn node ->
+      _ = Node.connect(node)
+      node
+    end)
   end
 
   # __end_of_module__

@@ -111,4 +111,14 @@ Generally speaking, it will be put into application start.
 
 ## Change log
 
-- [v1.0.1] Fixed bug when put with ttl and remove `delete_object/1`. [pull request](https://github.com/ArcBlock/mcc/pull/6)
+- [v1.0.1]
+  - Fixed bug when put with ttl and remove `delete_object/1`
+
+
+  [pull request](https://github.com/ArcBlock/mcc/pull/6)
+
+- [v1.0.2]
+  - try to connect kernel optional nodes before join cluster
+  - added log after joined in cluster and create/copy table
+
+  [pull request](https://github.com/ArcBlock/mcc/pull/7)

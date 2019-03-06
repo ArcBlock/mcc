@@ -7,26 +7,34 @@ defmodule Mcc.Model do
     quote do
       use Mcc.Model.Repo
 
+      require Logger
+
       alias Mcc.Expiration.Supervisor, as: ExpSup
       alias Mcc.Model
 
       @spec boot_tables() :: :ok
       def boot_tables do
-        Enum.each(tables(), fn {table, attr} -> Model.create_table(table, attr) end)
+        Enum.each(tables(), fn {table, attr} ->
+          Model.create_table(table, attr)
+          Logger.info("[mcc] mnesia table #{table} created")
+        end)
       end
 
       @spec copy_tables() :: :ok
       def copy_tables do
         Enum.each(tables(), fn {table, attr} ->
-          case {
-            Keyword.has_key?(attr, :ram_copies),
-            Keyword.has_key?(attr, :disc_copies),
-            Keyword.has_key?(attr, :disc_only_copies)
-          } do
-            {true, false, false} -> Model.copy_table(table, :ram_copies)
-            {false, true, false} -> Model.copy_table(table, :disc_copies)
-            {false, false, true} -> Model.copy_table(table, :disc_only_copies)
-          end
+          copy_res =
+            case {
+              Keyword.has_key?(attr, :ram_copies),
+              Keyword.has_key?(attr, :disc_copies),
+              Keyword.has_key?(attr, :disc_only_copies)
+            } do
+              {true, false, false} -> Model.copy_table(table, :ram_copies)
+              {false, true, false} -> Model.copy_table(table, :disc_copies)
+              {false, false, true} -> Model.copy_table(table, :disc_only_copies)
+            end
+
+          Logger.info("[mcc] mnesia table #{table} copied, result: #{inspect(copy_res)}")
         end)
 
         :ok

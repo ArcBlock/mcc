@@ -5,6 +5,8 @@ defmodule Mcc.Expiration.Worker do
 
   use GenServer
 
+  require Logger
+
   def start_link(worker_name, worker_opts) do
     GenServer.start_link(__MODULE__, worker_opts, name: worker_name)
   end
@@ -12,10 +14,12 @@ defmodule Mcc.Expiration.Worker do
   def init(worker_opts) do
     check_interval = Keyword.get(worker_opts, :check_interval, 1_000)
     scheduler(check_interval)
+    main_tab = Keyword.fetch!(worker_opts, :main_table)
+    Logger.info("[mcc] the expiration process for #{main_tab} started")
 
     {:ok,
      %{
-       main_tab: Keyword.fetch!(worker_opts, :main_table),
+       main_tab: main_tab,
        exp_tab: Keyword.fetch!(worker_opts, :expiration_table),
        size_limit: Keyword.get(worker_opts, :size_limit, 1_000_000),
        memory_limit: Keyword.get(worker_opts, :memory_limit, 100),

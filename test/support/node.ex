@@ -11,6 +11,7 @@ defmodule MccTest.Support.Node do
     node_pid = start_node_pid(:"#{name}", node_name)
     :ok = block_until_nodeup(node_pid)
     {:ok, _} = :rpc.call(node(), Application, :ensure_all_started, [:elixir])
+    {:ok, _} = :rpc.call(node_name, Application, :ensure_all_started, [:logger])
     {:ok, node_name, node_pid}
   end
 
