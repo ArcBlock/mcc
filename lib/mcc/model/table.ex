@@ -3,6 +3,8 @@ defmodule Mcc.Model.Table do
   Define a mnesia table.
   """
 
+  require Logger
+
   defmacro __using__(opts) do
     quote do
       require Logger
@@ -10,11 +12,21 @@ defmodule Mcc.Model.Table do
       import Kernel, except: [defstruct: 1]
       import Mcc.Model.Builder
 
+      alias Mcc.Model.Table
+
       @mnesia_opts unquote(Macro.escape(opts[:table_opts]))
       @expiration_opts unquote(Keyword.get(opts, :expiration_opts, []))
       @table_name __MODULE__
       @record_name __MODULE__
       @before_compile unquote(__MODULE__)
+
+      @type consistency_level ::
+              :transaction
+              | {:transaction, integer()}
+              | :sync_transaction
+              | {:sync_transaction, integer()}
+              | :async_dirty
+              | :sync_dirty
 
       @doc """
       Get expiration options for current table.
@@ -23,37 +35,46 @@ defmodule Mcc.Model.Table do
       def get_expiration_opts, do: @expiration_opts
 
       @doc """
+      Get expiration table for main table.
+      """
+      @spec get_expiration_tab :: nil | atom()
+      def get_expiration_tab do
+        Keyword.get(@expiration_opts, :expiration_table)
+      end
+
+      @doc """
       Return all keys from current table.
       """
-      def keys do
-        :mnesia.dirty_all_keys(@table_name)
-      catch
-        :exit, reason ->
-          Logger.warn("Get keys from #{__MODULE__} error, #{inspect(reason)}")
-          []
+      @spec keys(consistency_level) :: [%__MODULE__{}]
+      def keys(consistency_level \\ :async_dirty) do
+        Table.mnesia_activity(fn -> :mnesia.all_keys(@table_name) end, consistency_level,
+          table: @table_name,
+          operation: "get all keys",
+          default: []
+        )
       end
 
       @doc """
       Return all records from current table by given `key`.
       """
-      @spec get_all(term()) :: [map()]
-      def get_all(key) do
-        @table_name
-        |> :mnesia.dirty_read(key)
+      @spec get_all(term(), consistency_level) :: [%__MODULE__{}]
+      def get_all(key, consistency_level \\ :async_dirty) do
+        fn -> :mnesia.read(@table_name, key) end
+        |> Table.mnesia_activity(consistency_level,
+          table: @table_name,
+          operation: "get all records",
+          default: []
+        )
         |> Enum.map(&record_to_struct/1)
-      catch
-        :exit, reason ->
-          Logger.warn("Get all records from #{__MODULE__} by key error, #{inspect(reason)}")
-          []
       end
 
       @doc """
       Return first record from current table by given `key`.
       """
-      @spec get(term()) :: nil | map()
-      def get(key) do
+      @spec get(term(), consistency_level) :: nil | map()
+      def get(key, consistency_level \\ :async_dirty) do
         key
-        |> get_all()
+        |> get_all(consistency_level)
         |> List.first()
         |> case do
           nil ->
@@ -75,61 +96,67 @@ defmodule Mcc.Model.Table do
       @doc """
       Put into current table.
       """
-      @spec put(map()) :: :ok
-      def put(%{__struct__: __MODULE__} = struct) do
-        :mnesia.dirty_write(@table_name, struct_to_record(struct))
-      catch
-        :exit, reason ->
-          Logger.warn("Write #{__MODULE__} error, #{inspect(reason)}")
-          :ok
+      @spec put(map(), consistency_level) :: :ok
+      def put(%{__struct__: __MODULE__} = struct, consistency_level \\ :async_dirty) do
+        Table.mnesia_activity(
+          fn -> :mnesia.write(@table_name, struct_to_record(struct), :write) end,
+          consistency_level,
+          table: @table_name,
+          operation: "write",
+          default: :ok
+        )
       end
 
       @doc """
       Put with cache_time and ttl.
       """
-      @spec put(term(), map(), atom(), non_neg_integer(), non_neg_integer()) :: :ok
-      def put(key, %{__struct__: __MODULE__} = struct, exp_tab, cache_time, ttl) do
-        set_ttl(struct, exp_tab, key, cache_time, ttl)
-        put(%{struct | __cache_time__: cache_time, __expire_time__: cache_time + ttl})
+      @spec put(term(), map(), integer(), consistency_level) :: :ok
+      def put(key, %{__struct__: __MODULE__} = struct, ttl, level \\ :async_dirty) do
+        cache_time = DateTime.to_unix(DateTime.utc_now())
+        set_ttl(struct, get_expiration_tab(), key, cache_time, ttl, level)
+        put(%{struct | __cache_time__: cache_time, __expire_time__: cache_time + ttl}, level)
       end
 
       @doc """
       Delete the record from current table by given `key`.
       """
-      @spec delete(term()) :: :ok
-      def delete(key) do
-        :mnesia.dirty_delete(@table_name, key)
-      catch
-        :exit, reason ->
-          Logger.warn("Delete from #{__MODULE__} error, #{inspect(reason)}")
-          :ok
-      end
+      @spec delete(term(), consistency_level) :: :ok
+      def delete(key, consistency_level \\ :async_dirty) do
+        key
+        |> get_all(consistency_level)
+        |> List.first()
+        |> case do
+          %{__expire_time__: old_expire_time} when not is_nil(old_expire_time) ->
+            case get_expiration_tab() do
+              nil -> nil
+              exp_tab -> apply(exp_tab, :delete, [{old_expire_time, key}, consistency_level])
+            end
 
-      @doc """
-      Delete the record from current table by given `key`, meanwhile delete the expiration.
-      """
-      @spec delete(term(), atom()) :: :ok
-      def delete(key, exp_tab) do
-        case get(key) do
-          nil ->
-            delete(key)
-
-          %{__expire_time__: old_expire_time} ->
-            exp_tab.delete({old_expire_time, key})
-            delete(key)
+          _ ->
+            nil
         end
+
+        Table.mnesia_activity(
+          fn -> :mnesia.delete(@table_name, key, :write) end,
+          consistency_level,
+          table: @table_name,
+          operation: "delete",
+          default: :ok
+        )
       end
 
       @doc """
       First for current table.
       """
-      @spec first :: term() | :"$end_of_table"
-      def first do
-        :mnesia.dirty_first(@table_name)
-      catch
-        :exit, reason ->
-          Logger.warn("First from #{__MODULE__} error, #{inspect(reason)}")
-          :"$end_of_table"
+      @spec first(consistency_level) :: term() | :"$end_of_table"
+      def first(consistency_level \\ :async_dirty) do
+        Table.mnesia_activity(
+          fn -> :mnesia.first(@table_name) end,
+          consistency_level,
+          table: @table_name,
+          operation: "first",
+          default: :"$end_of_table"
+        )
       end
 
       @doc """
@@ -147,19 +174,27 @@ defmodule Mcc.Model.Table do
       @doc """
       Set ttl.
       """
-      @spec set_ttl(map(), atom(), term(), non_neg_integer(), non_neg_integer()) :: :ok
-      def set_ttl(%{__expire_time__: nil}, exp_tab, key, cache_time, ttl) do
-        case get(key) do
-          nil -> nil
-          %{__expire_time__: old_expire_time} -> exp_tab.delete({old_expire_time, key})
+      @spec set_ttl(map(), atom() | nil, term(), integer(), integer(), consistency_level) :: :ok
+      def set_ttl(_, nil, _, _, _, _), do: nil
+
+      def set_ttl(%{__expire_time__: nil}, exp_tab, key, cache_time, ttl, consistency_level) do
+        key
+        |> get_all(consistency_level)
+        |> List.first()
+        |> case do
+          %{__expire_time__: old_expire_time} when not is_nil(old_expire_time) ->
+            exp_tab.delete({old_expire_time, key}, consistency_level)
+
+          _ ->
+            nil
         end
 
-        exp_tab.put({cache_time + ttl, key}, 0)
+        exp_tab.put(%{__struct__: exp_tab, key: {cache_time + ttl, key}}, consistency_level)
       end
 
-      def set_ttl(%{__expire_time__: expire_time}, exp_tab, key, cache_time, ttl) do
-        exp_tab.delete({expire_time, key})
-        exp_tab.put({cache_time + ttl, key}, 0)
+      def set_ttl(%{__expire_time__: expire_time}, exp_tab, key, cache_time, ttl, level) do
+        exp_tab.delete({expire_time, key}, level)
+        exp_tab.put(%{__struct__: exp_tab, key: {cache_time + ttl, key}}, level)
       end
 
       defoverridable []
@@ -197,6 +232,17 @@ defmodule Mcc.Model.Table do
         |> List.to_tuple()
       end
     end
+  end
+
+  def mnesia_activity(fun, access_context, operation_opts) do
+    :mnesia.activity(access_context, fun)
+  catch
+    :exit, reason ->
+      table = Keyword.get(operation_opts, :table)
+      operation = Keyword.get(operation_opts, :operation)
+      default = Keyword.get(operation_opts, :default)
+      Logger.warn("[mcc] table activity warn, #{operation} from #{table}, #{inspect(reason)}")
+      default
   end
 
   # __end_of_module__

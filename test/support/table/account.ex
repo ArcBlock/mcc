@@ -13,10 +13,6 @@ defmodule MccTest.Support.Table.Account.Exp do
     ]
 
   defstruct [:key, :value]
-
-  def put(key, value) do
-    put(%__MODULE__{key: key, value: value})
-  end
 end
 
 defmodule MccTest.Support.Table.Account do
@@ -47,11 +43,9 @@ defmodule MccTest.Support.Table.Account do
   defstruct([:id, :user_profile], true)
 
   def get_with_ttl(k, ttl \\ 10) do
-    now = DateTime.to_unix(DateTime.utc_now())
-
     case get(k) do
       %{id: ^k, user_profile: _v} = old_object ->
-        put(k, old_object, AccountExp, now, ttl)
+        put(k, old_object, ttl)
         old_object
 
       _ ->
@@ -60,8 +54,7 @@ defmodule MccTest.Support.Table.Account do
   end
 
   def put_with_ttl(k, v, ttl \\ 10) do
-    now = DateTime.to_unix(DateTime.utc_now())
-    put(k, %MccTest.Support.Table.Account{id: k, user_profile: v}, AccountExp, now, ttl)
+    put(k, %MccTest.Support.Table.Account{id: k, user_profile: v}, ttl)
   end
 
   #

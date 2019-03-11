@@ -122,3 +122,12 @@ Generally speaking, it will be put into application start.
   - added log after joined in cluster and create/copy table
 
   [pull request](https://github.com/ArcBlock/mcc/pull/7)
+
+- [v1.0.3]
+  - support different level for operation consistency
+  - remove `delete/2` function, will delete expiration table automatically
+  - need not pass `cache_time` when put record, will calculate `now` real-time
+
+  FYI: [operation consistency for Mnesia](http://erlang.org/doc/apps/mnesia/Mnesia_chap4.html)
+
+  [pull request](https://github.com/ArcBlock/mcc/pull/8)
