@@ -57,6 +57,10 @@ defmodule Mcc.Rpc do
         get_target_node(Enum.at(node_list, hash), key, exclude_node)
       end
 
+      defp get_target_node({_, node_list}, key, exclude_node) do
+        get_target_node(node_list, key, exclude_node)
+      end
+
       defp get_target_node([_ | _] = node_list, _, exclude_node) do
         node_list
         |> Enum.reject(fn i -> exclude_node == i end)
