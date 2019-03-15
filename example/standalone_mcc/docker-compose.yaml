@@ -1,0 +1,63 @@
+version: '2'
+
+services:
+
+  mcc_store_1: &mcc_store_cluster_1
+    image: redink/mcc_store:0.1.0
+    environment:
+      TZ: Asia/Shanghai
+      CACHE_DATA_DIR: "/data/mcc_store/cache/data/"
+      KERNEL_OPTIONAL_NODES: "mcc_store@mcc_store_1,mcc_store@mcc_store_2,mcc_store@mcc_store_3"
+    container_name: mcc_store_1
+    hostname: mcc_store_1
+    restart: always
+
+  mcc_store_2:
+    <<: *mcc_store_cluster_1
+    container_name: mcc_store_2
+    hostname: mcc_store_2
+    depends_on:
+      - mcc_store_1
+
+  mcc_store_3:
+    <<: *mcc_store_cluster_1
+    container_name: mcc_store_3
+    hostname: mcc_store_3
+    depends_on:
+      - mcc_store_1
+
+  mcc_store_4: &mcc_store_cluster_2
+    image: redink/mcc_store:0.1.0
+    environment:
+      TZ: Asia/Shanghai
+      CACHE_DATA_DIR: "/data/mcc_store/cache/data/"
+      KERNEL_OPTIONAL_NODES: "mcc_store@mcc_store_4,mcc_store@mcc_store_5,mcc_store@mcc_store_6"
+    container_name: mcc_store_4
+    hostname: mcc_store_4
+    restart: always
+
+  mcc_store_5:
+    <<: *mcc_store_cluster_2
+    container_name: mcc_store_5
+    hostname: mcc_store_5
+    depends_on:
+      - mcc_store_4
+
+  mcc_store_6:
+    <<: *mcc_store_cluster_2
+    container_name: mcc_store_6
+    hostname: mcc_store_6
+    depends_on:
+      - mcc_store_4
+
+  mcc_logic_1:
+    image: redink/mcc_logic:0.1.0
+    environment:
+      TZ: Asia/Shanghai
+      MCC_STORE_NODE_LIST: "mcc_store@mcc_store_1,mcc_store@mcc_store_2,mcc_store@mcc_store_3;mcc_store@mcc_store_4,mcc_store@mcc_store_5,mcc_store@mcc_store_6"
+    container_name: mcc_logic_1
+    hostname: mcc_logic_1
+    restart: always
+    depends_on:
+      - mcc_store_1
+      - mcc_store_4

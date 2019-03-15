@@ -1,0 +1,3 @@
+%{
+  "mcc": {:git, "https://github.com/arcblock/mcc.git", "feba392be59b4034b62aed06ce224172f074bff6", []},
+}
