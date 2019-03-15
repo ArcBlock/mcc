@@ -131,3 +131,19 @@ Generally speaking, it will be put into application start.
   FYI: [operation consistency for Mnesia](http://erlang.org/doc/apps/mnesia/Mnesia_chap4.html)
 
   [pull request](https://github.com/ArcBlock/mcc/pull/8)
+
+- [v1.1.0]
+  - support split mcc cluster from the logic service
+  - added two examples to present how to use mcc
+
+  pull requests:
+
+    - https://github.com/ArcBlock/mcc/pull/12
+    - https://github.com/ArcBlock/mcc/pull/5
+    - https://github.com/ArcBlock/mcc/pull/10
+    - https://github.com/ArcBlock/mcc/pull/9
+    - https://github.com/ArcBlock/mcc/pull/11
+
+  closed issues:
+
+    - https://github.com/ArcBlock/mcc/issues/4
