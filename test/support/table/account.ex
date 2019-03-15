@@ -22,6 +22,11 @@ defmodule MccTest.Support.Table.Account do
 
   alias MccTest.Support.Table.Account.Exp, as: AccountExp
 
+  use Mcc.Rpc,
+    target_list: [node()],
+    retry_times: 3,
+    rpc_timeout: 5000
+
   use Mcc.Model.Table,
     table_opts: [
       type: :set,
@@ -42,6 +47,9 @@ defmodule MccTest.Support.Table.Account do
 
   defstruct([:id, :user_profile], true)
 
+  rpc(get_with_ttl(k))
+  rpc(get_with_ttl(k, ttl))
+
   def get_with_ttl(k, ttl \\ 10) do
     case get(k) do
       %{id: ^k, user_profile: _v} = old_object ->
@@ -52,6 +60,9 @@ defmodule MccTest.Support.Table.Account do
         :"$not_can_found"
     end
   end
+
+  rpc(put_with_ttl(k, v))
+  rpc(put_with_ttl(k, v, ttl))
 
   def put_with_ttl(k, v, ttl \\ 10) do
     put(k, %MccTest.Support.Table.Account{id: k, user_profile: v}, ttl)

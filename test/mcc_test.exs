@@ -8,12 +8,12 @@ defmodule MccTest do
   end
 
   test "test put and get" do
-    TableAccount.put_with_ttl("id1", %{id: "id1", name: "name1"})
+    TableAccount.rpc_put_with_ttl("id1", %{id: "id1", name: "name1"}, 100)
 
     assert %MccTest.Support.Table.Account{
              id: "id1",
              user_profile: %{id: "id1", name: "name1"}
-           } = TableAccount.get_with_ttl("id1")
+           } = TableAccount.rpc_get_with_ttl("id1")
   end
 
   test "test put and get, with set ttl" do

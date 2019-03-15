@@ -80,6 +80,9 @@ defmodule Mcc.Model.Table do
           nil ->
             nil
 
+          %{__expire_time__: nil} = old_obj ->
+            old_obj
+
           %{__expire_time__: expire_time} = old_obj ->
             if DateTime.to_unix(DateTime.utc_now()) >= expire_time do
               delete(key)

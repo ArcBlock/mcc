@@ -9,12 +9,19 @@ defmodule Mcc.Application do
   # alias Mcc.
 
   def start(_type, _args) do
-    Mcc.start()
-    Mcc.register_guard()
-    join_cluster()
-    children = [{ExpSup, strategy: :one_for_one, name: ExpSup}]
     opts = [strategy: :one_for_one, name: Mcc.Supervisor]
-    Supervisor.start_link(children, opts)
+
+    case Application.get_env(:mcc, :start_mcc, true) do
+      true ->
+        Mcc.start()
+        Mcc.register_guard()
+        join_cluster()
+        children = [{ExpSup, strategy: :one_for_one, name: ExpSup}]
+        Supervisor.start_link(children, opts)
+
+      false ->
+        Supervisor.start_link([], opts)
+    end
   end
 
   @doc false
