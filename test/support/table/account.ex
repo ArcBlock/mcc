@@ -65,7 +65,7 @@ defmodule MccTest.Support.Table.Account do
   rpc(put_with_ttl(k, v, ttl))
 
   def put_with_ttl(k, v, ttl \\ 10) do
-    put(k, %MccTest.Support.Table.Account{id: k, user_profile: v}, ttl)
+    async_put(k, %MccTest.Support.Table.Account{id: k, user_profile: v}, ttl)
   end
 
   #

@@ -13,6 +13,7 @@ defmodule Mcc.Model.Table do
       import Mcc.Model.Builder
 
       alias Mcc.Model.Table
+      alias Mcc.Async.Writer
 
       @mnesia_opts unquote(Macro.escape(opts[:table_opts]))
       @expiration_opts unquote(Keyword.get(opts, :expiration_opts, []))
@@ -118,6 +119,14 @@ defmodule Mcc.Model.Table do
         cache_time = DateTime.to_unix(DateTime.utc_now())
         set_ttl(struct, get_expiration_tab(), key, cache_time, ttl, level)
         put(%{struct | __cache_time__: cache_time, __expire_time__: cache_time + ttl}, level)
+      end
+
+      @doc """
+      Put with cache_time and ttl through async writer.
+      """
+      @spec async_put(term(), map(), integer(), consistency_level) :: :ok
+      def async_put(key, struct, ttl, level \\ :async_dirty) do
+        Writer.put(key, __MODULE__, :put, [key, struct, ttl, level])
       end
 
       @doc """
@@ -244,7 +253,7 @@ defmodule Mcc.Model.Table do
       table = Keyword.get(operation_opts, :table)
       operation = Keyword.get(operation_opts, :operation)
       default = Keyword.get(operation_opts, :default)
-      Logger.warn("[mcc] table activity warn, #{operation} from #{table}, #{inspect(reason)}")
+      _ = Logger.warn("[mcc] table activity warn, #{operation} from #{table}, #{inspect(reason)}")
       default
   end
 

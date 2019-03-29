@@ -15,7 +15,7 @@ defmodule Mcc.Expiration.Worker do
     check_interval = Keyword.get(worker_opts, :check_interval, 1_000)
     scheduler(check_interval)
     main_tab = Keyword.fetch!(worker_opts, :main_table)
-    Logger.info("[mcc] the expiration process for #{main_tab} started")
+    _ = Logger.info("[mcc] the expiration process for #{main_tab} started")
 
     {:ok,
      %{

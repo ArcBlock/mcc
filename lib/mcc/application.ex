@@ -3,6 +3,8 @@ defmodule Mcc.Application do
 
   use Application
   require Logger
+
+  alias Mcc.Async.Supervisor, as: AsyncSup
   alias Mcc.Expiration.Supervisor, as: ExpSup
   alias Mcc.Lib
 
@@ -15,8 +17,8 @@ defmodule Mcc.Application do
       true ->
         Mcc.start()
         Mcc.register_guard()
-        join_cluster()
-        children = [{ExpSup, strategy: :one_for_one, name: ExpSup}]
+        _ = join_cluster()
+        children = [ExpSup, AsyncSup]
         Supervisor.start_link(children, opts)
 
       false ->
@@ -33,18 +35,19 @@ defmodule Mcc.Application do
     |> case do
       [] ->
         Logger.warn("[mcc] #{node()} can't find any other nodes")
-        :ok
 
       node_list ->
         [target_node | _] = Enum.sort(node_list)
         true = ensure_target_running?(target_node)
 
         case Mcc.join(target_node) do
-          :ok -> Logger.info("[mcc] #{node()} joined in target node #{target_node}")
-          {:error, {:already_clustered, _}} -> nil
-        end
+          :ok ->
+            _ = Logger.info("[mcc] #{node()} joined in target node #{target_node}")
+            Logger.info("[mcc] current cluster node list: #{inspect(Lib.status())}")
 
-        Logger.info("[mcc] current cluster node list: #{inspect(Lib.status())}")
+          {:error, {:already_clustered, _}} ->
+            Logger.info("[mcc] current cluster node list: #{inspect(Lib.status())}")
+        end
     end
   end
 

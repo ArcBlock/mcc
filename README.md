@@ -147,3 +147,8 @@ Generally speaking, it will be put into application start.
   closed issues:
 
     - https://github.com/ArcBlock/mcc/issues/4
+
+- [v1.1.1]
+  - support async put through writer process
+
+  [pull request](https://github.com/ArcBlock/mcc/pull/13)
