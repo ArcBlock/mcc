@@ -14,27 +14,17 @@ defmodule Mcc.Model do
 
       @spec boot_tables() :: :ok
       def boot_tables do
-        Enum.each(tables(), fn {table, attr} ->
-          Model.create_table(table, attr)
-          Logger.info("[mcc] mnesia table #{table} created")
+        Enum.each(tables(), fn
+          {{_, table}, attr} -> boot_table_do(table, attr)
+          {table, attr} -> boot_table_do(table, attr)
         end)
       end
 
       @spec copy_tables() :: :ok
       def copy_tables do
-        Enum.each(tables(), fn {table, attr} ->
-          copy_res =
-            case {
-              Keyword.has_key?(attr, :ram_copies),
-              Keyword.has_key?(attr, :disc_copies),
-              Keyword.has_key?(attr, :disc_only_copies)
-            } do
-              {true, false, false} -> Model.copy_table(table, :ram_copies)
-              {false, true, false} -> Model.copy_table(table, :disc_copies)
-              {false, false, true} -> Model.copy_table(table, :disc_only_copies)
-            end
-
-          Logger.info("[mcc] mnesia table #{table} copied, result: #{inspect(copy_res)}")
+        Enum.each(tables(), fn
+          {{_, table}, attr} -> copy_table_do(table, attr)
+          {table, attr} -> copy_table_do(table, attr)
         end)
 
         :ok
@@ -42,12 +32,41 @@ defmodule Mcc.Model do
 
       @spec start_expiration_process :: :ok
       def start_expiration_process do
-        Enum.each(tables(), fn {module, _} ->
-          case apply(module, :get_expiration_opts, []) do
-            [] -> nil
-            expiration_opts -> ExpSup.add_expiration_worker(module, expiration_opts)
-          end
+        Enum.each(tables(), fn
+          {{module, table_name}, _} ->
+            case apply(module, :get_expiration_opts, [table_name]) do
+              [] -> nil
+              expiration_opts -> ExpSup.add_expiration_worker(module, expiration_opts)
+            end
+
+          {module, _} ->
+            case apply(module, :get_expiration_opts, []) do
+              [] -> nil
+              expiration_opts -> ExpSup.add_expiration_worker(module, expiration_opts)
+            end
         end)
+      end
+
+      @doc false
+      defp boot_table_do(table, attr) do
+        Model.create_table(table, attr)
+        Logger.info("[mcc] mnesia table #{table} created")
+      end
+
+      @doc false
+      defp copy_table_do(table, attr) do
+        copy_res =
+          case {
+            Keyword.has_key?(attr, :ram_copies),
+            Keyword.has_key?(attr, :disc_copies),
+            Keyword.has_key?(attr, :disc_only_copies)
+          } do
+            {true, false, false} -> Model.copy_table(table, :ram_copies)
+            {false, true, false} -> Model.copy_table(table, :disc_copies)
+            {false, false, true} -> Model.copy_table(table, :disc_only_copies)
+          end
+
+        Logger.info("[mcc] mnesia table #{table} copied, result: #{inspect(copy_res)}")
       end
 
       # __end_of_macro__

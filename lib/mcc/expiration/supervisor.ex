@@ -20,7 +20,12 @@ defmodule Mcc.Expiration.Supervisor do
       start: {Worker, :start_link, [table, opts]}
     }
 
-    DynamicSupervisor.start_child(__MODULE__, child_spec)
+    case DynamicSupervisor.start_child(__MODULE__, child_spec) do
+      {:ok, _} -> :ok
+      {:ok, _, _} -> :ok
+      {:error, {:already_started, _}} -> :ok
+      other -> {:error, other}
+    end
   end
 
   # __end_of_module__

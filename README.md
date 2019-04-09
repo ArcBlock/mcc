@@ -152,3 +152,8 @@ Generally speaking, it will be put into application start.
   - support async put through writer process
 
   [pull request](https://github.com/ArcBlock/mcc/pull/13)
+
+- [v1.2.0]
+  - support dynamic table
+
+  [pull request](https://github.com/ArcBlock/mcc/pull/14)
